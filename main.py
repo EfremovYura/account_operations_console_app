@@ -1,21 +1,21 @@
-from datetime import datetime
 from config import JSON_FILE, LIMIT_OPERATIONS
-from utils import load_json, get_invalid_operations_index, print_operations
-
+from utils import load_json, remove_not_executed_operations, validate_data, print_operations, change_date_type
 
 if __name__ == "__main__":
     # Загрузить данные из файла
     data = load_json(JSON_FILE)
 
-    # Удалить из данных операции с пустыми полями и не EXECUTED
-    operations_index_to_del = get_invalid_operations_index(data)
-    for index in operations_index_to_del[::-1]:
-        del data[index]
+    # Валидация данных
+    validated_data = validate_data(data)
+
+    # Удалить из данных операции не EXECUTED
+    remove_not_executed_operations(validated_data)
+
+    # Изменить тип даты
+    change_date_type(validated_data)
 
     # Отсортировать данные по убыванию даты
-    sorted_by_date_data = sorted(data,
-                                 key=lambda operation: datetime.strptime(operation.get('date'), '%Y-%m-%dT%H:%M:%S.%f'),
-                                 reverse=True)
+    validated_data.sort(key=lambda operation: operation.date, reverse=True)
 
     # Вывод на экран в заданном формате
-    print_operations(sorted_by_date_data[:LIMIT_OPERATIONS])
+    print_operations(validated_data[:LIMIT_OPERATIONS])
