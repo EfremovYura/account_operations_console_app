@@ -1,27 +1,36 @@
+from datetime import datetime
 import pytest
 
+from utils import load_json, hide_numbers, get_formatted_str, validate_data, remove_not_executed_operations, \
+    change_date_type
 
-from utils import load_json, has_empty_fields, get_invalid_operations_index, hide_numbers, get_formatted_str
-
-from config import JSON_FILE
+from config import JSON_FILE, JSON_DATE_FORMAT
 
 
 def test_load_json():
     assert isinstance(load_json(JSON_FILE), list)
 
 
-def test_has_empty_fields(good_operations, bad_operations):
-    for operation in good_operations:
-        assert has_empty_fields(operation) is False
-
-    for operation in bad_operations:
-        assert has_empty_fields(operation) is True
+def test_validate_data(good_operations_data, bad_operations_data):
+    assert len(validate_data(good_operations_data)) == len(good_operations_data)
+    assert len(validate_data(bad_operations_data)) == 0
 
 
-def test_get_invalid_operations_index(good_operations, bad_operations, canceled_operation):
-    assert get_invalid_operations_index(bad_operations) == list(range(len(bad_operations)))
-    assert get_invalid_operations_index([canceled_operation]) == [0]
-    assert get_invalid_operations_index(good_operations) == []
+def test_remove_not_executed_operations(canceled_operation_data, good_card_to_card_operation_data):
+    validated_data = validate_data([canceled_operation_data, good_card_to_card_operation_data])
+    assert len(validated_data) == 2
+
+    remove_not_executed_operations(validated_data)
+
+    assert len(validated_data) == 1
+
+
+def test_change_date_type(good_card_to_bill_operation):
+    assert isinstance(good_card_to_bill_operation.date, str)
+
+    change_date_type([good_card_to_bill_operation])
+
+    assert isinstance(good_card_to_bill_operation.date, datetime)
 
 
 hide_from_to_data = [
@@ -37,4 +46,6 @@ def test_hide_numbers(plain_data, formatted_data):
 
 
 def test_get_formatted_str(good_card_to_bill_operation, good_card_to_bill_operation_formatted_str):
+    good_card_to_bill_operation.date = datetime.strptime(good_card_to_bill_operation.date, JSON_DATE_FORMAT)
+
     assert get_formatted_str(good_card_to_bill_operation) == good_card_to_bill_operation_formatted_str
